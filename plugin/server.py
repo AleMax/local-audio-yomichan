@@ -170,6 +170,20 @@ class LocalAudioHandler(http.server.SimpleHTTPRequestHandler):
         audio_sources_json_list = []
         with sqlite3.connect(get_db_path()) as connection:
             rows = execute_query(connection, qcomps)
+
+            # Post processing for if its a kanji word, then prioritize entries that *don't* have a NULL reading:
+            if qcomps.reading != qcomps.expression:
+                out_rows = []
+                null_rows = []
+                for row in rows:
+                    if row[READING] != None:
+                        out_rows.append(row)
+                    else:
+                        null_rows.append(row)
+                rows = out_rows
+                rows.extend(null_rows)
+
+
             for row in rows:
                 source = row[SOURCE]
                 file = row[FILE]
